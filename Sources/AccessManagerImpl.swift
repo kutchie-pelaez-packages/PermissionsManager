@@ -1,6 +1,6 @@
 import AVKit
 import AppTrackingTransparency
-import CoreUtils
+import Core
 import Photos
 import os
 

@@ -11,13 +11,13 @@ let package = Package(
         .library(name: "AccessManager", targets: ["AccessManager"])
     ],
     dependencies: [
-        .package(name: "CoreUtils", url: "https://github.com/kutchie-pelaez-packages/CoreUtils", .branch("master"))
+        .package(name: "Core", url: "https://github.com/kutchie-pelaez-packages/Core", .branch("master"))
     ],
     targets: [
         .target(
             name: "AccessManager",
             dependencies: [
-                .product(name: "CoreUtils", package: "CoreUtils")
+                .product(name: "Core", package: "Core")
             ],
             path: "Sources"
         )
