@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "AccessManager", targets: ["AccessManager"])
     ],
     dependencies: [
-        .package(name: "Core", url: "https://github.com/kutchie-pelaez-packages/Core", .branch("master"))
+        .package(name: "Core", url: "https://github.com/kutchie-pelaez-packages/Core.git", .branch("master"))
     ],
     targets: [
         .target(
