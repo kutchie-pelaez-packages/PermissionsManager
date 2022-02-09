@@ -1,14 +1,17 @@
 import AVKit
 import AppTrackingTransparency
 import Core
+import Logger
 import Photos
-import os
-
-private let logger = Logger("access")
 
 final class AccessManagerImpl: AccessManager {
+    init(logger: Logger) {
+        self.logger = logger
+    }
 
-    // MARK: - Getting status
+    private let logger: Logger
+
+    // MARK: -
 
     private var photoLibraryAccessStatus: AccessStatus {
         AccessStatus(from: PHPhotoLibrary.authorizationStatus(for: .readWrite))
@@ -21,8 +24,6 @@ final class AccessManagerImpl: AccessManager {
     private var appTrackingTransparencyConsentStatus: AccessStatus {
         AccessStatus(from: ATTrackingManager.trackingAuthorizationStatus)
     }
-
-    // MARK: - Requesting status
 
     private func requestPhotoLibraryAccess() async -> AccessStatus {
         if photoLibraryAccessStatus == .permitted {
@@ -79,7 +80,7 @@ final class AccessManagerImpl: AccessManager {
 
     @MainActor
     func requestAccess(for domain: AccessDomain) async -> AccessStatus {
-        logger.log("Requesting access for \(domain) domain...")
+        logger.log("Requesting access for \(domain) domain...", domain: .access)
 
         switch domain {
         case .photoLibrary:
@@ -154,4 +155,8 @@ private extension AccessStatus {
             self = .notDetermined
         }
     }
+}
+
+extension LogDomain {
+    fileprivate static var access: Self = "access"
 }

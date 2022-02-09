@@ -1,8 +1,4 @@
-public enum AccessDomain:
-    String,
-    CustomStringConvertible
-{
-
+public enum AccessDomain: String, CustomStringConvertible {
     case photoLibrary
     case camera
     case appTracking
