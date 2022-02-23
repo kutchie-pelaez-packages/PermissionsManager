@@ -71,12 +71,12 @@ final class PermissionsManagerImpl: PermissionsManager {
     func receive(_ tweak: Tweak) {
         guard
             tweak.id == .Permissions.updatePermissionStatus,
-            let domain = tweak.args[.Permissions.domain] as? PermissionDomain,
-            let newValue = tweak.args[.newValue] as? PermissionStatus
+            let domain = tweak.args[.Permissions.domain] as? PermissionDomain
         else {
             return
         }
 
+        let newValue = tweak.args[.newValue] as? PermissionStatus
         tweakedDomainToStatus[domain] = newValue
     }
 
@@ -86,7 +86,7 @@ final class PermissionsManagerImpl: PermissionsManager {
         if let tweakedPermissionStatus = tweakedDomainToStatus[domain] {
             return tweakedPermissionStatus
         }
-        
+
         switch domain {
         case .photoLibrary:
             return photoLibraryPermissionStatus
@@ -103,6 +103,10 @@ final class PermissionsManagerImpl: PermissionsManager {
     func requestPermission(for domain: PermissionDomain) async -> PermissionStatus {
         logger.log("Requesting permission for \(domain) domain...", domain: .permission)
 
+        if let tweakedPermissionStatus = tweakedDomainToStatus[domain] {
+            return tweakedPermissionStatus
+        }
+
         switch domain {
         case .photoLibrary:
             return await requestPhotoLibraryPermission()
@@ -113,6 +117,10 @@ final class PermissionsManagerImpl: PermissionsManager {
         case .appTracking:
             return await requestAppTrackingTransparencyConsent()
         }
+    }
+
+    func isPermissionStatusMocked(for domain: PermissionDomain) -> Bool {
+        tweakedDomainToStatus[domain].isNotNil
     }
 }
 
