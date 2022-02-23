@@ -1,4 +1,4 @@
-public enum AccessStatus {
+public enum PermissionStatus {
     case notDetermined
     case permitted
     case restricted

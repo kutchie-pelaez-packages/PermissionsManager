@@ -1,4 +1,4 @@
-public enum AccessDomain: String, CustomStringConvertible {
+public enum PermissionDomain: String, CustomStringConvertible, CaseIterable {
     case photoLibrary
     case camera
     case appTracking

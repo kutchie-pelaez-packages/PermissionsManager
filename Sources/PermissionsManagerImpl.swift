@@ -3,41 +3,44 @@ import AppTrackingTransparency
 import Core
 import Logger
 import Photos
+import Tweak
 
-final class AccessManagerImpl: AccessManager {
+final class PermissionsManagerImpl: PermissionsManager {
     init(logger: Logger) {
         self.logger = logger
     }
 
     private let logger: Logger
 
+    private var tweakedDomainToStatus = [PermissionDomain: PermissionStatus]()
+
+    private var photoLibraryPermissionStatus: PermissionStatus {
+        PermissionStatus(from: PHPhotoLibrary.authorizationStatus(for: .readWrite))
+    }
+
+    private var cameraPermissionStatus: PermissionStatus {
+        PermissionStatus(from: AVCaptureDevice.authorizationStatus(for: .video))
+    }
+
+    private var appTrackingTransparencyConsentStatus: PermissionStatus {
+        PermissionStatus(from: ATTrackingManager.trackingAuthorizationStatus)
+    }
+
     // MARK: -
 
-    private var photoLibraryAccessStatus: AccessStatus {
-        AccessStatus(from: PHPhotoLibrary.authorizationStatus(for: .readWrite))
-    }
-
-    private var cameraAccessStatus: AccessStatus {
-        AccessStatus(from: AVCaptureDevice.authorizationStatus(for: .video))
-    }
-
-    private var appTrackingTransparencyConsentStatus: AccessStatus {
-        AccessStatus(from: ATTrackingManager.trackingAuthorizationStatus)
-    }
-
-    private func requestPhotoLibraryAccess() async -> AccessStatus {
-        if photoLibraryAccessStatus == .permitted {
+    private func requestPhotoLibraryPermission() async -> PermissionStatus {
+        if photoLibraryPermissionStatus == .permitted {
             return .permitted
         }
 
         let photosAuthorizationStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
-        let accessStatus = AccessStatus(from: photosAuthorizationStatus)
+        let permissionStatus = PermissionStatus(from: photosAuthorizationStatus)
 
-        return accessStatus
+        return permissionStatus
     }
 
-    private func requestCameraAccess() async -> AccessStatus {
-        if cameraAccessStatus == .permitted {
+    private func requestCameraPermission() async -> PermissionStatus {
+        if cameraPermissionStatus == .permitted {
             return .permitted
         }
 
@@ -50,28 +53,46 @@ final class AccessManagerImpl: AccessManager {
         }
     }
 
-    private func requestAppTrackingTransparencyConsent() async -> AccessStatus {
+    private func requestAppTrackingTransparencyConsent() async -> PermissionStatus {
         if appTrackingTransparencyConsentStatus == .permitted {
             return .permitted
         }
 
         return await withCheckedContinuation { continuation in
             ATTrackingManager.requestTrackingAuthorization { attAuthorizationStatus in
-                let accessStatus = AccessStatus(from: attAuthorizationStatus)
-                continuation.resume(returning: accessStatus)
+                let permissionStatus = PermissionStatus(from: attAuthorizationStatus)
+                continuation.resume(returning: permissionStatus)
             }
         }
     }
 
-    // MARK: - AccessManager
+    // MARK: - TweakReceiver
 
-    func accessStatus(for domain: AccessDomain) -> AccessStatus {
+    func receive(_ tweak: Tweak) {
+        guard
+            tweak.id == .Permissions.updatePermissionStatus,
+            let domain = tweak.args[.Permissions.domain] as? PermissionDomain,
+            let newValue = tweak.args[.newValue] as? PermissionStatus
+        else {
+            return
+        }
+
+        tweakedDomainToStatus[domain] = newValue
+    }
+
+    // MARK: - PermissionsManager
+
+    func permissionStatus(for domain: PermissionDomain) -> PermissionStatus {
+        if let tweakedPermissionStatus = tweakedDomainToStatus[domain] {
+            return tweakedPermissionStatus
+        }
+        
         switch domain {
         case .photoLibrary:
-            return photoLibraryAccessStatus
+            return photoLibraryPermissionStatus
 
         case .camera:
-            return cameraAccessStatus
+            return cameraPermissionStatus
 
         case .appTracking:
             return appTrackingTransparencyConsentStatus
@@ -79,15 +100,15 @@ final class AccessManagerImpl: AccessManager {
     }
 
     @MainActor
-    func requestAccess(for domain: AccessDomain) async -> AccessStatus {
-        logger.log("Requesting access for \(domain) domain...", domain: .access)
+    func requestPermission(for domain: PermissionDomain) async -> PermissionStatus {
+        logger.log("Requesting permission for \(domain) domain...", domain: .permission)
 
         switch domain {
         case .photoLibrary:
-            return await requestPhotoLibraryAccess()
+            return await requestPhotoLibraryPermission()
 
         case .camera:
-            return await requestCameraAccess()
+            return await requestCameraPermission()
 
         case .appTracking:
             return await requestAppTrackingTransparencyConsent()
@@ -95,7 +116,7 @@ final class AccessManagerImpl: AccessManager {
     }
 }
 
-private extension AccessStatus {
+private extension PermissionStatus {
     init(from phAuthorizationStatus: PHAuthorizationStatus) {
         switch phAuthorizationStatus {
         case .authorized:
@@ -158,5 +179,5 @@ private extension AccessStatus {
 }
 
 extension LogDomain {
-    fileprivate static var access: Self = "access"
+    fileprivate static var permission: Self = "permission"
 }

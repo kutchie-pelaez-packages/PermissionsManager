@@ -1,1 +1,1 @@
-# AccessManager
+# PermissionsManager

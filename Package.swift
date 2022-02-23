@@ -3,28 +3,30 @@
 import PackageDescription
 
 let package = Package(
-    name: "AccessManager",
+    name: "PermissionsManager",
     platforms: [
         .iOS("15")
     ],
     products: [
         .library(
-            name: "AccessManager", 
+            name: "PermissionsManager",
             targets: [
-                "AccessManager"
+                "PermissionsManager"
             ]
         )
     ],
     dependencies: [
         .package(name: "Core", url: "https://github.com/kutchie-pelaez-packages/Core.git", .branch("master")),
-        .package(name: "Logging", url: "https://github.com/kutchie-pelaez-packages/Logging.git", .branch("master"))
+        .package(name: "Logging", url: "https://github.com/kutchie-pelaez-packages/Logging.git", .branch("master")),
+        .package(name: "Tweaks", url: "https://github.com/kutchie-pelaez-packages/Tweaks.git", .branch("master"))
     ],
     targets: [
         .target(
-            name: "AccessManager",
+            name: "PermissionsManager",
             dependencies: [
                 .product(name: "Core", package: "Core"),
-                .product(name: "Logger", package: "Logging")
+                .product(name: "Logger", package: "Logging"),
+                .product(name: "Tweak", package: "Tweaks")
             ],
             path: "Sources"
         )
