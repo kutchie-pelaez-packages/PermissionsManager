@@ -101,22 +101,27 @@ final class PermissionsManagerImpl: PermissionsManager {
 
     @MainActor
     func requestPermission(for domain: PermissionDomain) async -> PermissionStatus {
+        let permissionStatus: PermissionStatus
+
         logger.log("Requesting permission for \(domain) domain...", domain: .permission)
+        defer { logger.log("Received \(permissionStatus) permission status for \(domain) domain", domain: .permission) }
 
         if let tweakedPermissionStatus = tweakedDomainToStatus[domain] {
-            return tweakedPermissionStatus
+            permissionStatus = tweakedPermissionStatus
+        } else {
+            switch domain {
+            case .photoLibrary:
+                permissionStatus = await requestPhotoLibraryPermission()
+
+            case .camera:
+                permissionStatus = await requestCameraPermission()
+
+            case .appTracking:
+                permissionStatus = await requestAppTrackingTransparencyConsent()
+            }
         }
 
-        switch domain {
-        case .photoLibrary:
-            return await requestPhotoLibraryPermission()
-
-        case .camera:
-            return await requestCameraPermission()
-
-        case .appTracking:
-            return await requestAppTrackingTransparencyConsent()
-        }
+        return permissionStatus
     }
 
     func isPermissionStatusMocked(for domain: PermissionDomain) -> Bool {
