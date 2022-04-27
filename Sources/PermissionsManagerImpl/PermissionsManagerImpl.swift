@@ -2,14 +2,12 @@ import AVKit
 import AppTrackingTransparency
 import Core
 import Logger
+import PermissionsManager
+import PermissionsManagerTweaking
 import Photos
-import Tweak
+import Tweaking
 
-final class PermissionsManagerImpl: PermissionsManager {
-    init(logger: Logger) {
-        self.logger = logger
-    }
-
+final class PermissionsManagerImpl: PermissionsManager & PermissionsManagerTweakReceiver {
     private let logger: Logger
 
     private var tweakedDomainToStatus = [PermissionDomain: PermissionStatus]()
@@ -26,7 +24,9 @@ final class PermissionsManagerImpl: PermissionsManager {
         PermissionStatus(from: ATTrackingManager.trackingAuthorizationStatus)
     }
 
-    // MARK: -
+    init(logger: Logger) {
+        self.logger = logger
+    }
 
     private func requestPhotoLibraryPermission() async -> PermissionStatus {
         if photoLibraryPermissionStatus == .permitted {
@@ -64,20 +64,6 @@ final class PermissionsManagerImpl: PermissionsManager {
                 continuation.resume(returning: permissionStatus)
             }
         }
-    }
-
-    // MARK: - TweakReceiver
-
-    func receive(_ tweak: Tweak) {
-        guard
-            tweak.id == .Permissions.updatePermissionStatus,
-            let domain = tweak.args[.Permissions.domain] as? PermissionDomain
-        else {
-            return
-        }
-
-        let newValue = tweak.args[.newValue] as? PermissionStatus
-        tweakedDomainToStatus[domain] = newValue
     }
 
     // MARK: - PermissionsManager
@@ -124,8 +110,24 @@ final class PermissionsManagerImpl: PermissionsManager {
         return permissionStatus
     }
 
-    func isPermissionStatusMocked(for domain: PermissionDomain) -> Bool {
+    // MARK: - PermissionsManagerTweakReceiver
+
+    func isPermissionStatusTweaked(for domain: PermissionDomain) -> Bool {
         tweakedDomainToStatus[domain].isNotNil
+    }
+
+    // MARK: - TweakReceiver
+
+    func receive(_ tweak: Tweak) {
+        guard
+            tweak.id == .Permissions.update,
+            let domain = tweak.args[.Permissions.domain] as? PermissionDomain
+        else {
+            return
+        }
+
+        let newValue = tweak.args[.newValue] as? PermissionStatus
+        tweakedDomainToStatus[domain] = newValue
     }
 }
 
@@ -191,6 +193,6 @@ private extension PermissionStatus {
     }
 }
 
-extension LogDomain {
-    fileprivate static var permission: Self = "permission"
+extension LoggingDomain {
+    fileprivate static var permission: LoggingDomain = "permission"
 }

@@ -5,7 +5,5 @@ public enum PermissionDomain: String, CustomStringConvertible, CaseIterable {
 
     // MARK: - CustomStringConvertible
 
-    public var description: String {
-        rawValue
-    }
+    public var description: String { rawValue }
 }
